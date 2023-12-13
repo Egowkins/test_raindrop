@@ -3,14 +3,22 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def optimization(train):
+def optimization(train, window_size=1000):
 
+    """
+
+    :param train: исходный датасет
+    :param window_size: окно для "сглаживания"
+    :return: возвращает оптимизированный датасет
+    """
     for column in train.columns:
         train[column] = train[column].astype(str)
         train[column] = train[column].str.replace(',', '.')
         train[column] = pd.to_numeric(train[column], errors='coerce')
-        print("!") #check
+        print(f"Оптимизация столбца {column}") #check
 
+    for column in train.columns:
+        train[column] = train[column].rolling(window=window_size).mean()
     return train
 
 

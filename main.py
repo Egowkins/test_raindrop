@@ -4,7 +4,7 @@ import numpy as np
 from Normal import optimization, heigh_search, plotter_maker
 
 
-def raindrop_collector(for_train, window_size: int, height_peak=None, window_mean=None, plot=True):
+def raindrop_collector(for_train, window_size: int, height_peak=None,  plot=True):
     """
 
     :param for_train: датасет для выделения капель
@@ -19,7 +19,7 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, window_mea
         raise TypeError('Тип данных должен быть int')
 
 
-    #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было) #TODO алгоритмический подбор окна
+    #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было) #TODO алгоритмический подбор окна(а требуется ли???)
     if window_size < 50000:
         window_size = 50000
     if height_peak is None:
@@ -33,7 +33,7 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, window_mea
 
     #храниние капель
     setup = np.empty((len(for_train),), dtype=object)
-    print("!")
+    print("Создано хранилище капель")
 
     #поиск пиков и вырез окна
     for i, peak in enumerate(peaks):
@@ -44,7 +44,9 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, window_mea
         # Добавляем окно в массив капелек
         setup[i] = window
 
-    #todo: сократить размерность данных путем усреднения
+    #todo: сократить размерность данных путем усреднения (относится к плавающему окну)
+
+
 
     #todo: добавление айдишников капель в датасет
 
@@ -62,12 +64,12 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, window_mea
 
 
 
-    """
+
     #пока что чертим 4 капельки
     for i in range(4):
         if plot:
             plotter_maker(setup[i])
-    """
+
     plotter_maker(for_train, peaks)
 
     return setup
@@ -76,13 +78,17 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, window_mea
 if __name__ == "__main__": #без кавычек)))
 
     df = pd.read_csv('venv/20231206-0001.csv', sep=';', decimal=',', low_memory=False)
-    df = optimization(df)
 
+    df = optimization(df)
+    #a = rolling_window(df, 50000)
 #ручной ввод окна
     WIN_SIZE = 50000
     a = raindrop_collector(df, WIN_SIZE)
 
-    print(a)
+    #plotter_maker(df)
+    #plotter_maker(a)
+
+    #print(a)
 
 
 
