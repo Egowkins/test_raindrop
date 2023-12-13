@@ -74,3 +74,26 @@ def peak_marker(df, peaks):
    for peak in peaks:
        df['x'] = 
 """
+def rolling_window(df, Win_size:int):
+
+
+# Создаем новый DataFrame для хранения "сглаженных" данных
+    new_df = pd.DataFrame()
+
+# Проходим по каждому каналу и применяем скользящее окно
+    for channel in df.columns:
+        if channel != 'Time':
+
+    # Применяем скользящее окно и усредняем значения
+            new_values = df[channel].rolling(window=Win_size, min_periods=1).mean()
+
+    # Добавляем "сглаженные" значения в новый DataFrame
+            new_df[channel] = new_values
+
+    new_df['Time'] = df['Time']
+
+
+# Выводим первые строки нового DataFrame
+    print(new_df.head(100))
+    print(df.head(100))
+    return new_df
