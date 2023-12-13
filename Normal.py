@@ -20,7 +20,15 @@ def optimization(train, window_size=1000):
     for column in train.columns:
         if column != "Time":
             train[column] = train[column].rolling(window=window_size).mean()
+            print(f"Сглаживание столбца {column}")
     return train
+
+
+def np_to_df(np_arr):
+
+    df = pd.concat(np_arr, ignore_index=True)
+
+    return df
 
 
 def heigh_search(dataframe):
@@ -104,8 +112,9 @@ def rolling_window(df, Win_size:int):
     new_df['Time'] = df['Time']
 """
 
-
+"""
 # Выводим первые строки нового DataFrame
     print(new_df.head(100))
     print(df.head(100))
     return new_df
+"""

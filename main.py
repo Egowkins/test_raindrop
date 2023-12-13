@@ -1,16 +1,16 @@
 from scipy.signal import find_peaks
 import pandas as pd
 import numpy as np
-from Normal import optimization, heigh_search, plotter_maker
+from Normal import optimization, heigh_search, plotter_maker, np_to_df
 
 
-def raindrop_collector(for_train, window_size: int, height_peak=None,  plot=True):
+def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_window: int = 1000,  plot=True):
     """
 
     :param for_train: датасет для выделения капель
     :param window_size: размер окна для ввода вручную, при отсутствии - назначается эмпирически выверенное
     :param height_peak: высота амплитуды. При отстутствии введенных данных - берется по формуле
-    :param window_mean: начальный размер скользящего окна
+    :param rolling_window: начальный размер скользящего окна
     :param plot: true - означает чертить графики в конце работы прогрммы.
     :return: возвращает массив numpy капелек. каждая ячейка содержит df капельки
     """
@@ -18,8 +18,10 @@ def raindrop_collector(for_train, window_size: int, height_peak=None,  plot=True
     if type(window_size) != int:
         raise TypeError('Тип данных должен быть int')
 
+    for_train = optimization(for_train, rolling_window)
 
-    #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было) #TODO алгоритмический подбор окна(а требуется ли???)
+
+    #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
     if window_size < 50000:
         window_size = 50000
     if height_peak is None:
@@ -37,41 +39,49 @@ def raindrop_collector(for_train, window_size: int, height_peak=None,  plot=True
 
     #поиск пиков и вырез окна
     for i, peak in enumerate(peaks):
+
         start = max(peak - window_size // 2, 0)
         end = min(peak + window_size // 2, len(for_train))
         # Вырезаем окно для каждого канала
         window = for_train.loc[start:end, ['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']].copy()
         # Добавляем окно в массив капелек
+
+        window['ID'] = i
+
+        time_values = for_train['Time'].values
+
+        distances = []
+
+        for j in range(0, len(peaks)-1):
+
+            time_diff = time_values[peaks[j+1]] - time_values[peaks[j]]
+            distances.append(time_diff)
+
+            print(time_diff)
+
+        distances.append(0)
+
+        window['x'] = distances[i]
         setup[i] = window
 
-    #todo: сократить размерность данных путем усреднения (относится к плавающему окну)
-
-
-
-    #todo: добавление айдишников капель в датасет
-
-    #todo: скользящее окно
 
     #todo: расстояние между пиками
 
+
+
     """
-    #TODO: из массива нампи достать айдишники капель и вписать в общий датасет
-    train['id'] = None
-    for i in setup:
-        if setup[i]['time'] == train['time'] : #понять как итерироваться по исходному дф
-            train['Id'] = i
-            """
-
-
-
-
     #пока что чертим 4 капельки
     for i in range(4):
         if plot:
             plotter_maker(setup[i])
 
     plotter_maker(for_train, peaks)
+    """
 
+
+    df_rainrops = np_to_df(setup)
+    print(df_rainrops.head(1000))
+    print(df_rainrops.tail(1000))
     return setup
 
 
@@ -79,7 +89,7 @@ if __name__ == "__main__": #без кавычек)))
 
     df = pd.read_csv('venv/20231206-0001.csv', sep=';', decimal=',', low_memory=False)
 
-    df = optimization(df)
+
     #a = rolling_window(df, 50000)
 #ручной ввод окна
     WIN_SIZE = 50000
