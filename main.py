@@ -85,10 +85,6 @@ if __name__ == "__main__": #без кавычек)))
     WIN_SIZE = 50000
     a = raindrop_collector(df, WIN_SIZE)
 
-    #plotter_maker(df)
-    #plotter_maker(a)
-
-    #print(a)
 
 
 

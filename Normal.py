@@ -18,7 +18,8 @@ def optimization(train, window_size=1000):
         print(f"Оптимизация столбца {column}") #check
 
     for column in train.columns:
-        train[column] = train[column].rolling(window=window_size).mean()
+        if column != "Time":
+            train[column] = train[column].rolling(window=window_size).mean()
     return train
 
 
@@ -82,6 +83,8 @@ def peak_marker(df, peaks):
    for peak in peaks:
        df['x'] = 
 """
+
+"""
 def rolling_window(df, Win_size:int):
 
 
@@ -99,6 +102,7 @@ def rolling_window(df, Win_size:int):
             new_df[channel] = new_values
 
     new_df['Time'] = df['Time']
+"""
 
 
 # Выводим первые строки нового DataFrame
