@@ -44,6 +44,24 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, window_mea
         # Добавляем окно в массив капелек
         setup[i] = window
 
+    #todo: сократить размерность данных путем усреднения
+
+    #todo: добавление айдишников капель в датасет
+
+    #todo: скользящее окно
+
+    #todo: расстояние между пиками
+
+    """
+    #TODO: из массива нампи достать айдишники капель и вписать в общий датасет
+    train['id'] = None
+    for i in setup:
+        if setup[i]['time'] == train['time'] : #понять как итерироваться по исходному дф
+            train['Id'] = i
+            """
+
+
+
     """
     #пока что чертим 4 капельки
     for i in range(4):

@@ -67,3 +67,10 @@ def plotter_maker(df, peaks_=None) -> None:
     # Отобразим графики
     plt.tight_layout()
     plt.show()
+
+"""
+def peak_marker(df, peaks):
+   df['x'] = None
+   for peak in peaks:
+       df['x'] = 
+"""
