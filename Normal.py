@@ -24,9 +24,12 @@ def optimization(train, window_size=1000):
     return train
 
 
-def np_to_df(np_arr):
 
-    df = pd.concat(np_arr, ignore_index=True)
+#TODO: написать декоратор
+def np_to_df(np_arr, df=None):
+
+    df_1 = pd.concat(np_arr, ignore_index=True)
+    df = pd.concat([df, df_1], ignore_index=True)
 
     return df
 
@@ -85,36 +88,20 @@ def plotter_maker(df, peaks_=None) -> None:
     plt.tight_layout()
     plt.show()
 
-"""
-def peak_marker(df, peaks):
-   df['x'] = None
-   for peak in peaks:
-       df['x'] = 
-"""
 
-"""
-def rolling_window(df, Win_size:int):
+def len_finder(num_mas):
+    """
+    list = []
+    count = 1
+    for i in len(num_mas): итерируемся по капле
+        for channel in i: итерируемся по каналам капли
+            if channel != "Time" and channel != 'ID':
+                iloc[channel].max - находим пик в канале
+                list[count] = iloc['Time'](max)  - Ищем время по строке максимума из пиков
+
+            count += 1
 
 
-# Создаем новый DataFrame для хранения "сглаженных" данных
-    new_df = pd.DataFrame()
-
-# Проходим по каждому каналу и применяем скользящее окно
-    for channel in df.columns:
-        if channel != 'Time':
-
-    # Применяем скользящее окно и усредняем значения
-            new_values = df[channel].rolling(window=Win_size, min_periods=1).mean()
-
-    # Добавляем "сглаженные" значения в новый DataFrame
-            new_df[channel] = new_values
-
-    new_df['Time'] = df['Time']
-"""
-
-"""
-# Выводим первые строки нового DataFrame
-    print(new_df.head(100))
-    print(df.head(100))
-    return new_df
-"""
+    :param num_mas:
+    :return:
+    """
