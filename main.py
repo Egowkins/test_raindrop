@@ -4,7 +4,10 @@ import numpy as np
 from Normal import optimization, heigh_search, plotter_maker, np_to_df
 
 
-def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_window: int = 1000,  plot=True):
+
+
+def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
+                       rolling_window: int = 1000, df=None,  plot=True):
     """
 
     :param for_train: датасет для выделения капель
@@ -22,8 +25,7 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_wi
 
 
     #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
-    if window_size < 50000:
-        window_size = 50000
+
     if height_peak is None:
         height_peak = heigh_search(for_train)
 
@@ -37,6 +39,11 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_wi
     setup = np.empty((len(for_train),), dtype=object)
     print("Создано хранилище капель")
 
+
+    #Объявляем глобальную переменную для учета индекса
+
+    global ITERATION
+
     #поиск пиков и вырез окна
     for i, peak in enumerate(peaks):
 
@@ -46,12 +53,13 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_wi
         window = for_train.loc[start:end, ['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']].copy()
         # Добавляем окно в массив капелек
 
-        window['ID'] = i
+        window['ID'] = (i + ITERATION)
 
         time_values = for_train['Time'].values
 
         distances = []
 
+        """
         for j in range(0, len(peaks)-1):
 
             time_diff = time_values[peaks[j+1]] - time_values[peaks[j]]
@@ -60,12 +68,17 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_wi
             print(time_diff)
 
         distances.append(0)
-
+        
         window['x'] = distances[i]
+        1: 
+        """
+
         setup[i] = window
 
+    ITERATION += len(peaks)
 
-    #todo: расстояние между пиками
+
+    #todo: расстояние между пиками 1,2,3,4
 
 
 
@@ -79,21 +92,29 @@ def raindrop_collector(for_train, window_size: int, height_peak=None, rolling_wi
     """
 
 
-    df_rainrops = np_to_df(setup)
+    df_rainrops = np_to_df(setup, df)
     print(df_rainrops.head(1000))
     print(df_rainrops.tail(1000))
-    return setup
+
+
+    return df_rainrops
 
 
 if __name__ == "__main__": #без кавычек)))
 
+    ITERATION = 0
+
+
     df = pd.read_csv('venv/20231206-0001.csv', sep=';', decimal=',', low_memory=False)
 
 
-    #a = rolling_window(df, 50000)
-#ручной ввод окна
+
     WIN_SIZE = 50000
+
     a = raindrop_collector(df, WIN_SIZE)
+
+    b = raindrop_collector(df, WIN_SIZE, df=a)
+
 
 
 
