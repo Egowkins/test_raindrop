@@ -15,7 +15,7 @@ def optimization(train, window_size=1000):
         train[column] = train[column].astype(str)
         train[column] = train[column].str.replace(',', '.')
         train[column] = pd.to_numeric(train[column], errors='coerce')
-        print(f"Оптимизация столбца {column}") #check
+        print(f"Оптимизация столбца {column}") # check
 
     for column in train.columns:
         if column != "Time":
@@ -25,7 +25,6 @@ def optimization(train, window_size=1000):
 
 
 
-#TODO: написать декоратор
 def np_to_df(np_arr, df=None):
 
     df_1 = pd.concat(np_arr, ignore_index=True)
@@ -108,32 +107,42 @@ def dt_finder(dataframe):
     time_list_C = []
     time_list_D = []
 
+    print(dataframe)
+    print('max_val:!!!')
+    print(max_values_df)
+
     for index, row in max_values_df.iterrows():
-        time_list_A.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[0])
-        time_list_B.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[1])
-        time_list_C.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[2])
-        time_list_D.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[3])
+        time_list_A.append(dataframe.loc[dataframe['Channel A'] == row['Channel A'], 'Time'].values[0])
+        time_list_B.append(dataframe.loc[dataframe['Channel B'] == row['Channel B'], 'Time'].values[0])
+        time_list_C.append(dataframe.loc[dataframe['Channel C'] == row['Channel C'], 'Time'].values[0])
+        time_list_D.append(dataframe.loc[dataframe['Channel D'] == row['Channel D'], 'Time'].values[0])
+
+    print('-------------------------------------------------------------\n\n\n\n\n')
+    print("Time List A:", time_list_A)
+    print("Time List B:", time_list_B)
+    print("Time List C:", time_list_C)
+    print("Time List D:", time_list_D)
     """
     dataframe['value1'] = dataframe['id'].map(lambda x: time_list_A[id_to_index[x]])
     dataframe['value2'] = dataframe['id'].map(lambda x: list2[id_to_index[x]])
     dataframe['value3'] = dataframe['id'].map(lambda x: list3[id_to_index[x]])
     dataframe['value4'] = dataframe['id'].map(lambda x: list4[id_to_index[x]])
     """
-    dt1 = pd.DataFrame([a - b for a, b in zip(time_list_A, time_list_B)], columns=["dt1"])
-    dt2 = pd.DataFrame([c - d for c, d in zip(time_list_C, time_list_D)], columns = ["dt2"])
-    dt3 = pd.DataFrame([a - c for a, c in zip(time_list_A, time_list_C)], columns = ["dt3"])
-    dt4 = pd.DataFrame([b - d for b, d in zip(time_list_B, time_list_D)], columns = ["dt4"])
+    dt1 = pd.DataFrame([a - b for a, b in zip(time_list_A, time_list_B)], columns=["dAB"])
+    dt2 = pd.DataFrame([c - d for c, d in zip(time_list_C, time_list_D)], columns=["dCD"])
+    dt3 = pd.DataFrame([a - c for a, c in zip(time_list_A, time_list_C)], columns=["dAC"])
+    dt4 = pd.DataFrame([b - d for b, d in zip(time_list_B, time_list_D)], columns=["dBD"])
 
 
     # для полного отображения дробных чисел
-    pd.set_option('display.float_format', lambda x: '%.20f' % x)
+    pd.set_option('display.float_format', lambda x: '%.12f' % x)
 
 
 
-    #print(dt1)
+
     #print([a - b for a, b in zip(time_list_A, time_list_B)])
 
-    dataframe = pd.merge(dataframe, dt1, left_on="ID", right_index = True)
+    dataframe = pd.merge(dataframe, dt1, left_on="ID", right_index=True)
     dataframe = pd.merge(dataframe, dt2, left_on="ID", right_index=True)
     dataframe = pd.merge(dataframe, dt3, left_on="ID", right_index=True)
     dataframe = pd.merge(dataframe, dt4, left_on="ID", right_index=True)
@@ -145,9 +154,9 @@ def dt_finder(dataframe):
 
     pd.set_option('display.max_columns', None)
     pd.set_option('display.expand_frame_repr', False)
-    #
 
-    print(dataframe)
+
+    #print(dataframe)
 
     return dataframe
 
