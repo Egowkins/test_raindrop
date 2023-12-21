@@ -1,9 +1,10 @@
 from scipy.signal import find_peaks
 import pandas as pd
 import numpy as np
-from Normal import optimization, heigh_search, plotter_maker, np_to_df
-
-
+from Normal import optimization, heigh_search, plotter_maker, np_to_df, dt_finder
+from tsfresh import extract_features
+from tsfresh.feature_extraction import ComprehensiveFCParameters
+from model import extract_features_df
 
 
 def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
@@ -24,14 +25,15 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     for_train = optimization(for_train, rolling_window)
 
 
-    #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
-
+    # hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
     if height_peak is None:
         height_peak = heigh_search(for_train)
 
 
     # находим пики с высотой больше ...
     peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
+
+    print(peaks)
 
     print(str(len(peaks)) + " length of peaks\n")
 
@@ -43,10 +45,12 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     #Объявляем глобальную переменную для учета индекса
 
     global ITERATION
-
+    count = 0
     #поиск пиков и вырез окна
     for i, peak in enumerate(peaks):
 
+
+        count += 1
         start = max(peak - window_size // 2, 0)
         end = min(peak + window_size // 2, len(for_train))
         # Вырезаем окно для каждого канала
@@ -54,10 +58,6 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
         # Добавляем окно в массив капелек
 
         window['ID'] = (i + ITERATION)
-
-        time_values = for_train['Time'].values
-
-        distances = []
 
         """
         for j in range(0, len(peaks)-1):
@@ -75,12 +75,11 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
         setup[i] = window
 
+    #дропнуть for_train
+    for_train = None
+
+
     ITERATION += len(peaks)
-
-
-    #todo: расстояние между пиками 1,2,3,4
-
-
 
     """
     #пока что чертим 4 капельки
@@ -92,10 +91,20 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     """
 
 
-    df_rainrops = np_to_df(setup, df)
+    #прилепить сюда!!!
+    df_rainrops = np_to_df(setup)
+    setup = None
+
+
+
+
+
+    #df_rainrops = np_to_df(df, df_1)
+
     print(df_rainrops.head(1000))
     print(df_rainrops.tail(1000))
 
+    # вставить функцию поиска расстояний между пиками
 
     return df_rainrops
 
@@ -103,17 +112,14 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 if __name__ == "__main__": #без кавычек)))
 
     ITERATION = 0
-
-
     df = pd.read_csv('venv/20231206-0001.csv', sep=';', decimal=',', low_memory=False)
-
-
-
     WIN_SIZE = 50000
 
     a = raindrop_collector(df, WIN_SIZE)
+    #b = raindrop_collector(df, WIN_SIZE, df=a)
 
-    b = raindrop_collector(df, WIN_SIZE, df=a)
+    a = dt_finder(a)
+    extract_features_df(a)
 
 
 
