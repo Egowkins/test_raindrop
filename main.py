@@ -1,13 +1,12 @@
-from scipy.signal import find_peaks
 import pandas as pd
-import numpy as np
-from Normal import optimization, heigh_search, plotter_maker, np_to_df
-
-
+from Normal import optimization, heigh_search, plotter_maker, np_to_df, dt_finder, raindrops_and_peaks, semi_optimization
+from model import feature_extractor
+from cat_model import model_rain
+import matplotlib.pyplot as plt
 
 
 def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
-                       rolling_window: int = 1000, df=None,  plot=True):
+                       rolling_window: int = 750, df=None, plot=True):
     """
 
     :param for_train: датасет для выделения капель
@@ -18,103 +17,86 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     :return: возвращает массив numpy капелек. каждая ячейка содержит df капельки
     """
 
+    for_train.dropna(inplace=True)
+    for_train = for_train.drop(0)
+    #print(for_train)
     if type(window_size) != int:
         raise TypeError('Тип данных должен быть int')
 
+    for_plot = for_train.copy()
+    for_plot = semi_optimization(for_plot)
+
+    #for_train = semi_optimization(for_train)
+    #for_train = low_pass_filter(for_train)
     for_train = optimization(for_train, rolling_window)
+    print(for_train)
 
-
-    #hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
-
+    # hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
     if height_peak is None:
-        height_peak = heigh_search(for_train)
-
+        height_peak = heigh_search(for_plot)
 
     # находим пики с высотой больше ...
-    peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
+    setup = raindrops_and_peaks(for_train, height_peak, window_size)
+    setup2 = raindrops_and_peaks(for_plot, height_peak, window_size)
+    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
 
-    print(str(len(peaks)) + " length of peaks\n")
+    # Наложите каждый график на соответствующую область
+    for i, ax in enumerate(axes.flatten()):
+        # Вам нужно указать свои столбцы и параметры для графика в функции plot()
+        ax.plot(setup[i]['Time'], setup[i]['Channel A'], label='Optimized', color='red')
+        ax.plot(setup2[i]['Time'], setup2[i]['Channel A'], label='Not_Optimized', color='b')
+        ax.set_title(f'Plot {i + 1}')
+        ax.legend()
 
-    #храниние капель
-    setup = np.empty((len(for_train),), dtype=object)
-    print("Создано хранилище капель")
+    # Регулируем расположение графиков
+    plt.tight_layout()
 
+    # Отображаем графики
+    plt.show()
 
-    #Объявляем глобальную переменную для учета индекса
+    # прилепить сюда!!!
+    df_rainrops = np_to_df(setup)
+    setup = None
 
-    global ITERATION
-
-    #поиск пиков и вырез окна
-    for i, peak in enumerate(peaks):
-
-        start = max(peak - window_size // 2, 0)
-        end = min(peak + window_size // 2, len(for_train))
-        # Вырезаем окно для каждого канала
-        window = for_train.loc[start:end, ['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']].copy()
-        # Добавляем окно в массив капелек
-
-        window['ID'] = (i + ITERATION)
-
-        time_values = for_train['Time'].values
-
-        distances = []
-
-        """
-        for j in range(0, len(peaks)-1):
-
-            time_diff = time_values[peaks[j+1]] - time_values[peaks[j]]
-            distances.append(time_diff)
-
-            print(time_diff)
-
-        distances.append(0)
-        
-        window['x'] = distances[i]
-        1: 
-        """
-
-        setup[i] = window
-
-    ITERATION += len(peaks)
-
-
-    #todo: расстояние между пиками 1,2,3,4
-
-
-
-    """
-    #пока что чертим 4 капельки
-    for i in range(4):
-        if plot:
-            plotter_maker(setup[i])
-
-    plotter_maker(for_train, peaks)
-    """
-
-
-    df_rainrops = np_to_df(setup, df)
     print(df_rainrops.head(1000))
     print(df_rainrops.tail(1000))
 
+    # вставить функцию поиска расстояний между пиками
 
     return df_rainrops
 
 
-if __name__ == "__main__": #без кавычек)))
+if __name__ == "__main__":
 
     ITERATION = 0
-
-
     df = pd.read_csv('venv/20231206-0001.csv', sep=';', decimal=',', low_memory=False)
-
-
-
     WIN_SIZE = 50000
 
-    a = raindrop_collector(df, WIN_SIZE)
 
-    b = raindrop_collector(df, WIN_SIZE, df=a)
+    #размченный датасет полный капель
+    df = raindrop_collector(df, WIN_SIZE)
 
+
+    print("Начало извлечения расстояний между пиками из выборки")
+    #датасет с фичами
+    #сюда мерджим результат работы tsfresh
+    features_of_df = dt_finder(df)
+    print("Конец извлечения расстояний между пиками из выборки")
+
+    for column in df:
+        #print(column)
+        if column != 'Time' and column != 'ID':
+            print(f'Извлечение признаков для колонки {column}')
+            features_of_df = feature_extractor(df, features_of_df, column)
+    print(features_of_df)
+
+    excel_file_path = 'output.xlsx'
+    features_of_df.to_excel(excel_file_path, index=False)
+
+    #results = model_rain(features_of_df, columns)
+    results = model_rain(features_of_df)
+
+    print(results)
 
 
 

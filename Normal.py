@@ -1,6 +1,44 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.signal import find_peaks, butter, filtfilt
+import os
+import pandas as pd
+
+
+def apply_lowpass_filter(data, cutoff_freq=0.08, order=5, sample_rate=2):
+    nyquist_freq = 0.5 * sample_rate
+    normal_cutoff = cutoff_freq / nyquist_freq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    filtered_data = filtfilt(b, a, data)
+    return filtered_data
+
+
+def combine_csv_to_dataframe(directory_path):
+    all_csv = [file for file in os.listdir(directory_path) if file.endswith('.csv')]
+
+    # Use the first CSV file to create the initial DataFrame
+    first_file = all_csv[0]
+    combined_dataframe = pd.read_csv(os.path.join(directory_path, first_file))
+
+    # Append the other CSV files to the initial DataFrame
+    for file in all_csv[1:]:
+        current_dataframe = pd.read_csv(os.path.join(directory_path, file))
+        combined_dataframe = combined_dataframe.append(current_dataframe, ignore_index=True)
+
+    return combined_dataframe
+
+
+def semi_optimization(train):
+    for column in train.columns:
+        train[column] = train[column].astype(str)
+        train[column] = train[column].str.replace(',', '.')
+        train[column] = pd.to_numeric(train[column], errors='coerce')
+        print(f"Оптимизация столбца {column}")  # check
+    return train
+
+
+
 
 
 def optimization(train, window_size=1000):
@@ -19,13 +57,12 @@ def optimization(train, window_size=1000):
 
     for column in train.columns:
         if column != "Time":
-            train[column] = train[column].rolling(window=window_size).mean()
+            #train[column] = train[column].rolling(window=window_size).mean()
+            train[column] = apply_lowpass_filter(train[column], cutoff_freq=0.08, order=5)
             print(f"Сглаживание столбца {column}")
     return train
 
 
-
-#TODO: написать декоратор
 def np_to_df(np_arr, df=None):
 
     df_1 = pd.concat(np_arr, ignore_index=True)
@@ -109,50 +146,99 @@ def dt_finder(dataframe):
     time_list_D = []
 
     for index, row in max_values_df.iterrows():
-        time_list_A.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[0])
-        time_list_B.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[1])
-        time_list_C.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[2])
-        time_list_D.append(dataframe.loc[dataframe['ID'] == row['ID'], 'Time'].values[3])
+        time_list_A.append(dataframe.loc[dataframe['Channel A'] == row['Channel A'], 'Time'].values[0])
+        time_list_B.append(dataframe.loc[dataframe['Channel B'] == row['Channel B'], 'Time'].values[0])
+        time_list_C.append(dataframe.loc[dataframe['Channel C'] == row['Channel C'], 'Time'].values[0])
+        time_list_D.append(dataframe.loc[dataframe['Channel D'] == row['Channel D'], 'Time'].values[0])
+
+
     """
     dataframe['value1'] = dataframe['id'].map(lambda x: time_list_A[id_to_index[x]])
     dataframe['value2'] = dataframe['id'].map(lambda x: list2[id_to_index[x]])
     dataframe['value3'] = dataframe['id'].map(lambda x: list3[id_to_index[x]])
     dataframe['value4'] = dataframe['id'].map(lambda x: list4[id_to_index[x]])
     """
-    dt1 = pd.DataFrame([a - b for a, b in zip(time_list_A, time_list_B)], columns=["dt1"])
-    dt2 = pd.DataFrame([c - d for c, d in zip(time_list_C, time_list_D)], columns = ["dt2"])
-    dt3 = pd.DataFrame([a - c for a, c in zip(time_list_A, time_list_C)], columns = ["dt3"])
-    dt4 = pd.DataFrame([b - d for b, d in zip(time_list_B, time_list_D)], columns = ["dt4"])
+    dt1 = pd.DataFrame([a - b for a, b in zip(time_list_A, time_list_B)], columns=["dtAB"])
+    dt2 = pd.DataFrame([c - d for c, d in zip(time_list_C, time_list_D)], columns=["dtCD"])
+    dt3 = pd.DataFrame([a - c for a, c in zip(time_list_A, time_list_C)], columns=["dtAC"])
+    dt4 = pd.DataFrame([b - d for b, d in zip(time_list_B, time_list_D)], columns=["dtBD"])
+
+
+    dt1['ID'] = idshniki
+    dt2['ID'] = idshniki
+    dt3['ID'] = idshniki
+    dt4['ID'] = idshniki
+
+
+
+
 
 
     # для полного отображения дробных чисел
-    pd.set_option('display.float_format', lambda x: '%.20f' % x)
+    pd.set_option('display.float_format', lambda x: '%.10f' % x)
+
+
+    dataframe1 = pd.merge(dt1, dt2, on="ID")
+
+
+    dataframe1 = pd.merge(dataframe1, dt3, on="ID")
+    dataframe1 = pd.merge(dataframe1, dt4, on="ID")
+    new_order = ['ID', 'dtAB', 'dtCD', 'dtAC', 'dtBD']
+    dataframe1 = dataframe1[new_order]
 
 
 
-    #print(dt1)
-    #print([a - b for a, b in zip(time_list_A, time_list_B)])
 
-    dataframe = pd.merge(dataframe, dt1, left_on="ID", right_index = True)
-    dataframe = pd.merge(dataframe, dt2, left_on="ID", right_index=True)
-    dataframe = pd.merge(dataframe, dt3, left_on="ID", right_index=True)
-    dataframe = pd.merge(dataframe, dt4, left_on="ID", right_index=True)
-
-    #dataframe = pd.concat([dataframe, dt1], ignore_index=True)
-    #dataframe = pd.concat([dataframe, dt2], ignore_index=True)
-    #dataframe = pd.concat([dataframe, dt3], ignore_index=True)
-    #dataframe = pd.concat([dataframe, dt4], ignore_index=True)
 
     pd.set_option('display.max_columns', None)
     pd.set_option('display.expand_frame_repr', False)
-    #
-
-    print(dataframe)
-
-    return dataframe
 
 
+    return dataframe1
 
+
+def raindrops_and_peaks(for_train, height_peak, window_size):
+
+    peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
+
+    print(peaks)
+
+    print(str(len(peaks)) + " length of peaks\n")
+
+    # храниние капель
+    setup = np.empty((len(for_train),), dtype=object)
+    print("Создано хранилище капель")
+
+    # Объявляем глобальную переменную для учета индекса
+
+    count = 0
+    # поиск пиков и вырез окна
+    for i, peak in enumerate(peaks):
+        count += 1
+        start = max(peak - window_size // 2, 0)
+        end = min(peak + window_size // 2, len(for_train))
+        # Вырезаем окно для каждого канала
+        window = for_train.loc[start:end, ['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']].copy()
+        # Добавляем окно в массив капелек
+
+        window['ID'] = i
+
+        """
+        for j in range(0, len(peaks)-1):
+
+            time_diff = time_values[peaks[j+1]] - time_values[peaks[j]]
+            distances.append(time_diff)
+
+            print(time_diff)
+
+        distances.append(0)
+
+        window['x'] = distances[i]
+        1: 
+        """
+
+        setup[i] = window
+    return setup
 
 
 
