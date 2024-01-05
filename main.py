@@ -1,8 +1,10 @@
 import pandas as pd
-from Normal import optimization, heigh_search, plotter_maker, np_to_df, dt_finder, raindrops_and_peaks, semi_optimization
+from Normal import optimization, heigh_search, plotter_maker, np_to_df, dt_finder, raindrops_and_peaks
 from model import feature_extractor
 from cat_model import model_rain
 import matplotlib.pyplot as plt
+from file_concat import concatination
+import os
 
 
 def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
@@ -11,8 +13,8 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
     :param for_train: датасет для выделения капель
     :param window_size: размер окна для ввода вручную, при отсутствии - назначается эмпирически выверенное
-    :param height_peak: высота амплитуды. При отстутствии введенных данных - берется по формуле
-    :param rolling_window: начальный размер скользящего окна
+    :param height_peak: высота амплитуды. При отстутствии введенных данных - берется по квантилю (смотри Normal.heigh_search)
+    :param rolling_window: начальный размер скользящего окна (не актуально)
     :param plot: true - означает чертить графики в конце работы прогрммы.
     :return: возвращает массив numpy  капелек. каждая ячейка содержит df капельки
     """
@@ -23,29 +25,15 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     if type(window_size) != int:
         raise TypeError('Тип данных должен быть int')
 
-    for_plot = for_train.copy()
-    for_plot = semi_optimization(for_plot)
 
-
-    #for_train = semi_optimization(for_train)
-    #for_train = low_pass_filter(for_train)
     for_train = optimization(for_train, rolling_window)
-
-    print(for_train)
 
     # hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
     if height_peak is None:
-        height_peak = heigh_search(for_plot)
+        height_peak = heigh_search(for_train)
 
-
-
-    # находим пики с высотой больше ...
     setup = raindrops_and_peaks(for_train, height_peak, window_size, butter=True)
-    #df_subset = for_plot.head(2000)
-    #plt.plot(df_subset['Time'], df_subset['Channel A'])
-    #Mega_gay = for_train.head(2000)
-    #plt.plot(Mega_gay['Time'], Mega_gay['Channel A'])
-    setup2 = raindrops_and_peaks(for_plot, height_peak, window_size)
+    setup2 = raindrops_and_peaks(for_train, height_peak, window_size)
     fig, axes = plt.subplots(4, 4, figsize=(20, 16))
 
     # Наложите каждый график на соответствующую область
@@ -67,7 +55,9 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
     # прилепить сюда!!!
     df_rainrops = np_to_df(setup)
+
     setup = None
+    setup2 = None
 
     print(df_rainrops.head(1000))
     print(df_rainrops.tail(1000))
@@ -78,45 +68,35 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
 
 if __name__ == "__main__":
-
-    ITERATION = 0
-    df = pd.read_csv('venv/20231206-0001.csv', sep=';', decimal=',', low_memory=False)
-    WIN_SIZE = 50000
+    final = None
+    for file in concatination():
+        df = pd.read_csv(f'{os.getcwd()}' + "\\" + file, sep=';', decimal=',', low_memory=False)
+        WIN_SIZE = 50000
 
 
     #размченный датасет полный капель
-    df = raindrop_collector(df, WIN_SIZE)
+        df = raindrop_collector(df, WIN_SIZE)
 
 
-    print("Начало извлечения расстояний между пиками из выборки")
+        print("Начало извлечения расстояний между пиками из выборки")
+
     #датасет с фичами
-    #сюда мерджим результат работы tsfresh
-    features_of_df = dt_finder(df)
-    print("Конец извлечения расстояний между пиками из выборки")
+    #сюда мерджим результат работы
 
-    for column in df:
-        #print(column)
-        if column != 'Time' and column != 'ID':
-            print(f'Извлечение признаков для колонки {column}')
-            features_of_df = feature_extractor(df, features_of_df, column)
-    print(features_of_df)
+        features_of_df = dt_finder(df)
+        print("Конец извлечения расстояний между пиками из выборки")
+
+        for column in df:
+
+            if column != 'Time' and column != 'ID':
+                print(f'Извлечение признаков для колонки {column}')
+                features_of_df = feature_extractor(df, features_of_df, column)
+        if final is None:
+            final = features_of_df
+        else:
+            final = final._append(features_of_df, ignore_index=True)
 
     excel_file_path = 'output.xlsx'
-    features_of_df.to_excel(excel_file_path, index=False)
-
-    #results = model_rain(features_of_df, columns)
-    results = model_rain(features_of_df)
-
+    final.to_excel(excel_file_path, index=False)
+    results = model_rain(final)
     print(results)
-
-
-
-
-
-
-
-
-
-
-
-

@@ -2,11 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, butter, filtfilt
-import os
 import pandas as pd
 
 
-def apply_lowpass_filter(data, cutoff_freq=0.08, order=5, sample_rate=2):
+
+#почекать катоф фрекьюнси
+def apply_lowpass_filter(data, cutoff_freq=1.5, order=10, sample_rate=5):
     nyquist_freq = 0.5 * sample_rate
     normal_cutoff = cutoff_freq / nyquist_freq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
@@ -14,52 +15,20 @@ def apply_lowpass_filter(data, cutoff_freq=0.08, order=5, sample_rate=2):
     return filtered_data
 
 
-def combine_csv_to_dataframe(directory_path):
-    all_csv = [file for file in os.listdir(directory_path) if file.endswith('.csv')]
-
-    # Use the first CSV file to create the initial DataFrame
-    first_file = all_csv[0]
-    combined_dataframe = pd.read_csv(os.path.join(directory_path, first_file))
-
-    # Append the other CSV files to the initial DataFrame
-    for file in all_csv[1:]:
-        current_dataframe = pd.read_csv(os.path.join(directory_path, file))
-        combined_dataframe = combined_dataframe.append(current_dataframe, ignore_index=True)
-
-    return combined_dataframe
-
-
-def semi_optimization(train):
-    for column in train.columns:
-        train[column] = train[column].astype(str)
-        train[column] = train[column].str.replace(',', '.')
-        train[column] = pd.to_numeric(train[column], errors='coerce')
-        print(f"Оптимизация столбца {column}")  # check
-    return train
-
-
-
-
-
 def optimization(train, window_size=1000):
 
     """
-
     :param train: исходный датасет
     :param window_size: окно для "сглаживания"
     :return: возвращает оптимизированный датасет
     """
+
     for column in train.columns:
         train[column] = train[column].astype(str)
         train[column] = train[column].str.replace(',', '.')
         train[column] = pd.to_numeric(train[column], errors='coerce')
         print(f"Оптимизация столбца {column}") #check
 
-    for column in train.columns:
-        if column != "Time":
-            #train[column] = train[column].rolling(window=window_size).mean()
-            train[column] = apply_lowpass_filter(train[column], cutoff_freq=0.08, order=5)
-            print(f"Сглаживание столбца {column}")
     return train
 
 
@@ -72,14 +41,13 @@ def np_to_df(np_arr, df=None):
 
 
 def heigh_search(dataframe):
-  """
-  Функция предназначена для нахождения уровня амплитуды сигнала А (ниже которой не берем – слишком маленькие капли)
-  """
+    """
+    Функция предназначена для нахождения уровня амплитуды сигнала А (ниже которой не берем – слишком маленькие капли)
+    """
+    positive_values = dataframe['Channel A'][dataframe['Channel A'] > 0]
+    height = np.nanquantile(positive_values, 0.15)
 
-  positive_values = dataframe['Channel A'][dataframe['Channel A'] > 0]
-  height = np.nanquantile(positive_values, 0.15)
-
-  return height
+    return height
 
 
 def plotter_maker(df, peaks_=None) -> None:
@@ -151,53 +119,32 @@ def dt_finder(dataframe):
         time_list_C.append(dataframe.loc[dataframe['Channel C'] == row['Channel C'], 'Time'].values[0])
         time_list_D.append(dataframe.loc[dataframe['Channel D'] == row['Channel D'], 'Time'].values[0])
 
-
-    """
-    dataframe['value1'] = dataframe['id'].map(lambda x: time_list_A[id_to_index[x]])
-    dataframe['value2'] = dataframe['id'].map(lambda x: list2[id_to_index[x]])
-    dataframe['value3'] = dataframe['id'].map(lambda x: list3[id_to_index[x]])
-    dataframe['value4'] = dataframe['id'].map(lambda x: list4[id_to_index[x]])
-    """
     dt1 = pd.DataFrame([a - b for a, b in zip(time_list_A, time_list_B)], columns=["dtAB"])
     dt2 = pd.DataFrame([c - d for c, d in zip(time_list_C, time_list_D)], columns=["dtCD"])
     dt3 = pd.DataFrame([a - c for a, c in zip(time_list_A, time_list_C)], columns=["dtAC"])
     dt4 = pd.DataFrame([b - d for b, d in zip(time_list_B, time_list_D)], columns=["dtBD"])
-
 
     dt1['ID'] = idshniki
     dt2['ID'] = idshniki
     dt3['ID'] = idshniki
     dt4['ID'] = idshniki
 
-
-
-
-
-
-    # для полного отображения дробных чисел
+    # для удобного отображения дробных чисел
     pd.set_option('display.float_format', lambda x: '%.10f' % x)
 
-
     dataframe1 = pd.merge(dt1, dt2, on="ID")
-
-
     dataframe1 = pd.merge(dataframe1, dt3, on="ID")
     dataframe1 = pd.merge(dataframe1, dt4, on="ID")
+
     new_order = ['ID', 'dtAB', 'dtCD', 'dtAC', 'dtBD']
     dataframe1 = dataframe1[new_order]
-
-
-
-
-
     pd.set_option('display.max_columns', None)
     pd.set_option('display.expand_frame_repr', False)
-
 
     return dataframe1
 
 
-def raindrops_and_peaks(for_train, height_peak, window_size):
+def raindrops_and_peaks(for_train, height_peak, window_size, butter=False, summa = 0):
 
     peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
 
@@ -219,25 +166,23 @@ def raindrops_and_peaks(for_train, height_peak, window_size):
         end = min(peak + window_size // 2, len(for_train))
         # Вырезаем окно для каждого канала
         window = for_train.loc[start:end, ['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']].copy()
+        #print(window)
+
         # Добавляем окно в массив капелек
+        if butter is True:
 
-        window['ID'] = i
 
-        """
-        for j in range(0, len(peaks)-1):
+                for column in window.columns:
 
-            time_diff = time_values[peaks[j+1]] - time_values[peaks[j]]
-            distances.append(time_diff)
+                    if column != "Time":
+                        # train[column] = train[column].rolling(window=window_size).mean()
+                        height_ = lambda a, b: a if a > b else b
+                        window[column] = apply_lowpass_filter(window[column], height_(abs(window[column].max()), 0.000001), 1, 2)
 
-            print(time_diff)
-
-        distances.append(0)
-
-        window['x'] = distances[i]
-        1: 
-        """
+        window['ID'] = i + summa
 
         setup[i] = window
+
     return setup
 
 
