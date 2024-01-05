@@ -14,7 +14,7 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     :param height_peak: высота амплитуды. При отстутствии введенных данных - берется по формуле
     :param rolling_window: начальный размер скользящего окна
     :param plot: true - означает чертить графики в конце работы прогрммы.
-    :return: возвращает массив numpy капелек. каждая ячейка содержит df капельки
+    :return: возвращает массив numpy  капелек. каждая ячейка содержит df капельки
     """
 
     for_train.dropna(inplace=True)
@@ -26,27 +26,38 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
     for_plot = for_train.copy()
     for_plot = semi_optimization(for_plot)
 
+
     #for_train = semi_optimization(for_train)
     #for_train = low_pass_filter(for_train)
     for_train = optimization(for_train, rolling_window)
+
     print(for_train)
 
     # hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
     if height_peak is None:
         height_peak = heigh_search(for_plot)
 
+
+
     # находим пики с высотой больше ...
-    setup = raindrops_and_peaks(for_train, height_peak, window_size)
+    setup = raindrops_and_peaks(for_train, height_peak, window_size, butter=True)
+    #df_subset = for_plot.head(2000)
+    #plt.plot(df_subset['Time'], df_subset['Channel A'])
+    #Mega_gay = for_train.head(2000)
+    #plt.plot(Mega_gay['Time'], Mega_gay['Channel A'])
     setup2 = raindrops_and_peaks(for_plot, height_peak, window_size)
-    fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+    fig, axes = plt.subplots(4, 4, figsize=(20, 16))
 
     # Наложите каждый график на соответствующую область
     for i, ax in enumerate(axes.flatten()):
         # Вам нужно указать свои столбцы и параметры для графика в функции plot()
-        ax.plot(setup[i]['Time'], setup[i]['Channel A'], label='Optimized', color='red')
+
         ax.plot(setup2[i]['Time'], setup2[i]['Channel A'], label='Not_Optimized', color='b')
-        ax.set_title(f'Plot {i + 1}')
+        plt.grid(True)
+        ax.plot(setup[i]['Time'], setup[i]['Channel A'], label='Optimized', color='red')
+        plt.grid(True)
         ax.legend()
+
 
     # Регулируем расположение графиков
     plt.tight_layout()
