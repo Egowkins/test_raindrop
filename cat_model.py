@@ -12,7 +12,7 @@ def model_rain(features_df):
     # Чекаем ласт букву и подтягиваем необходимые столбцы
     columns_to_exclude = ['dtAB', 'dtCD', 'dtAC', 'dtBD', 'ID']
     feature_columns = [col for col in features_df.columns if col not in columns_to_exclude and (col.endswith(last_letter) or col.endswith(pred_last_letter))]
-
+    df[f'{Channel%}]
     #print(feature_columns)
 
     X = features_df[feature_columns]
