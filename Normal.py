@@ -5,8 +5,8 @@ from scipy.signal import find_peaks, butter, filtfilt
 import os
 import pandas as pd
 
-
-def apply_lowpass_filter(data, cutoff_freq=0.08, order=5, sample_rate=2):
+#почекать катоф фрекьюнси
+def apply_lowpass_filter(data, cutoff_freq=1.5, order=10, sample_rate=5):
     nyquist_freq = 0.5 * sample_rate
     normal_cutoff = cutoff_freq / nyquist_freq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
@@ -35,6 +35,7 @@ def semi_optimization(train):
         train[column] = train[column].str.replace(',', '.')
         train[column] = pd.to_numeric(train[column], errors='coerce')
         print(f"Оптимизация столбца {column}")  # check
+    #train.to_csv('Optimized_', index=False)
     return train
 
 
@@ -55,11 +56,7 @@ def optimization(train, window_size=1000):
         train[column] = pd.to_numeric(train[column], errors='coerce')
         print(f"Оптимизация столбца {column}") #check
 
-    for column in train.columns:
-        if column != "Time":
-            #train[column] = train[column].rolling(window=window_size).mean()
-            train[column] = apply_lowpass_filter(train[column], cutoff_freq=0.08, order=5)
-            print(f"Сглаживание столбца {column}")
+
     return train
 
 
@@ -197,7 +194,7 @@ def dt_finder(dataframe):
     return dataframe1
 
 
-def raindrops_and_peaks(for_train, height_peak, window_size):
+def raindrops_and_peaks(for_train, height_peak, window_size, butter=False):
 
     peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
 
@@ -219,7 +216,14 @@ def raindrops_and_peaks(for_train, height_peak, window_size):
         end = min(peak + window_size // 2, len(for_train))
         # Вырезаем окно для каждого канала
         window = for_train.loc[start:end, ['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']].copy()
+
         # Добавляем окно в массив капелек
+        if butter is True:
+            for column in window.columns:
+                if column != "Time":
+                    # train[column] = train[column].rolling(window=window_size).mean()
+                    window[column] = apply_lowpass_filter(window[column], abs(window[column].max())-0.005, 1, 2)
+                    print(f"Сглаживание столбца {column}")
 
         window['ID'] = i
 
