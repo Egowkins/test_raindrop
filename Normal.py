@@ -144,7 +144,7 @@ def dt_finder(dataframe):
     return dataframe1
 
 
-def raindrops_and_peaks(for_train, height_peak, window_size, butter=False, summa = 0):
+def raindrops_and_peaks(for_train, height_peak, window_size, butter=False, summa=0):
 
     peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
 

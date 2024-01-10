@@ -3,7 +3,7 @@ from Normal import optimization, heigh_search, plotter_maker, np_to_df, dt_finde
 from model import feature_extractor
 from cat_model import model_rain
 import matplotlib.pyplot as plt
-from file_concat import concatination
+from file_concat import concatination, exp_param
 import os
 
 
@@ -21,21 +21,21 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
     for_train.dropna(inplace=True)
     for_train = for_train.drop(0)
-    #print(for_train)
+
     if type(window_size) != int:
         raise TypeError('Тип данных должен быть int')
 
 
     for_train = optimization(for_train, rolling_window)
 
-    # hardcode для эмпирически выверенного окна (лучшего окна пока выведено не было)
     if height_peak is None:
         height_peak = heigh_search(for_train)
 
     setup = raindrops_and_peaks(for_train, height_peak, window_size, butter=True)
-    setup2 = raindrops_and_peaks(for_train, height_peak, window_size)
+    """
+    #setup2 = raindrops_and_peaks(for_train, height_peak, window_size)
     fig, axes = plt.subplots(4, 4, figsize=(20, 16))
-
+    
     # Наложите каждый график на соответствующую область
     for i, ax in enumerate(axes.flatten()):
         # Вам нужно указать свои столбцы и параметры для графика в функции plot()
@@ -52,6 +52,7 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
     # Отображаем графики
     plt.show()
+    """
 
     # прилепить сюда!!!
     df_rainrops = np_to_df(setup)
@@ -70,6 +71,7 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 if __name__ == "__main__":
     final = None
     for file in concatination():
+        #todo .mat  в .csv
         df = pd.read_csv(f'{os.getcwd()}' + "\\" + file, sep=';', decimal=',', low_memory=False)
         WIN_SIZE = 50000
 
@@ -91,6 +93,9 @@ if __name__ == "__main__":
             if column != 'Time' and column != 'ID':
                 print(f'Извлечение признаков для колонки {column}')
                 features_of_df = feature_extractor(df, features_of_df, column)
+
+        features_of_df = pd.concat([features_of_df, exp_param(file)])
+
         if final is None:
             final = features_of_df
         else:
