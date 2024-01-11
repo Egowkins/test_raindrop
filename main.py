@@ -71,7 +71,7 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 if __name__ == "__main__":
     final = None
     for file in concatination():
-        #todo .mat  в .csv
+        #todo .mat  в .csv мазафака
         df = pd.read_csv(f'{os.getcwd()}' + "\\" + file, sep=';', decimal=',', low_memory=False)
         WIN_SIZE = 50000
 
@@ -94,14 +94,24 @@ if __name__ == "__main__":
                 print(f'Извлечение признаков для колонки {column}')
                 features_of_df = feature_extractor(df, features_of_df, column)
 
-        features_of_df = pd.concat([features_of_df, exp_param(file)])
+        row_to_add = exp_param(file)
+        number_of_rows_to_add = features_of_df.shape[0]
+
+        # Повторяем строки row_to_add столько раз, сколько строк в features_of_df
+        rows_to_add = pd.concat([row_to_add] * number_of_rows_to_add, ignore_index=True, axis=0)
+
+        # Добавляем rows_to_add слева к features_of_df
+        features_of_df = pd.concat([features_of_df, rows_to_add], axis=1)
 
         if final is None:
             final = features_of_df
         else:
-            final = final._append(features_of_df, ignore_index=True)
+            final = pd.concat([features_of_df, final], ignore_index=True)
 
     excel_file_path = 'output.xlsx'
+
     final.to_excel(excel_file_path, index=False)
+    final.drop('M', axis=1, inplace=True)
+    print(final)
     results = model_rain(final)
     print(results)

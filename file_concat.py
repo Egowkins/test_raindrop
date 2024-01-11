@@ -4,6 +4,7 @@ import re
 
 def concatination():
     #todo проитерироваться по папкам и достать файлы
+
     path = os.getcwd()  # Нужно указать путь к папке, в которой находятся файлы
     combined_dataframe_name = 'combined.csv'
     files = [filename for filename in os.listdir(path) if filename.endswith('.csv') ]
@@ -11,6 +12,7 @@ def concatination():
         #return os.path.join(path, files[0])
 
     # Получаем группы числовых значений из названий файлов
+
     def extract_numbers(filename):
         parts = re.findall(r'\d+', filename)
         return tuple(map(int, parts))
