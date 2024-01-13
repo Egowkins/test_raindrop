@@ -1,39 +1,36 @@
 import pandas as pd
-from Normal import optimization, heigh_search, plotter_maker, np_to_df, dt_finder, raindrops_and_peaks
+import numpy as np
+from Normal import heigh_search, plotter_maker, np_to_df, dt_finder, raindrops_and_peaks
 from model import feature_extractor
 from cat_model import model_rain
 import matplotlib.pyplot as plt
-from file_concat import concatination, exp_param
+import scipy.io
+from file_find import finder
+from file_concat import exp_param
 import os
 
 
-def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
-                       rolling_window: int = 750, df=None, plot=True):
+def raindrop_collector(for_train, window_size: int = 50000,
+                       height_peak=None, plot=True):
     """
-
+    #todo настройка лоу пасс фильтра
     :param for_train: датасет для выделения капель
     :param window_size: размер окна для ввода вручную, при отсутствии - назначается эмпирически выверенное
     :param height_peak: высота амплитуды. При отстутствии введенных данных - берется по квантилю (смотри Normal.heigh_search)
-    :param rolling_window: начальный размер скользящего окна (не актуально)
-    :param plot: true - означает чертить графики в конце работы прогрммы.
+    :param plot: true - означает чертить графики во время работы программы.
+    :param low_pass - настройка лоу пасс фильтра, если ничего не было введено - то по умолчанию
     :return: возвращает массив numpy  капелек. каждая ячейка содержит df капельки
     """
 
-    for_train.dropna(inplace=True)
-    for_train = for_train.drop(0)
-
     if type(window_size) != int:
         raise TypeError('Тип данных должен быть int')
-
-
-    for_train = optimization(for_train, rolling_window)
 
     if height_peak is None:
         height_peak = heigh_search(for_train)
 
     setup = raindrops_and_peaks(for_train, height_peak, window_size, butter=True)
     """
-    #setup2 = raindrops_and_peaks(for_train, height_peak, window_size)
+    setup2 = raindrops_and_peaks(for_train, height_peak, window_size)
     fig, axes = plt.subplots(4, 4, figsize=(20, 16))
     
     # Наложите каждый график на соответствующую область
@@ -52,9 +49,8 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
     # Отображаем графики
     plt.show()
-    """
+   """
 
-    # прилепить сюда!!!
     df_rainrops = np_to_df(setup)
 
     setup = None
@@ -69,10 +65,35 @@ def raindrop_collector(for_train, window_size: int = 50000, height_peak=None,
 
 
 if __name__ == "__main__":
+    # todo многопоточность
+    # todo рефакторинг (сделать все функциями!!!)
+    # todo юниттесты
+    # todo документация
     final = None
-    for file in concatination():
-        #todo .mat  в .csv мазафака
-        df = pd.read_csv(f'{os.getcwd()}' + "\\" + file, sep=';', decimal=',', low_memory=False)
+    finder()
+    for file in finder():
+
+        mat_data = scipy.io.loadmat(file)
+        Tstart = mat_data['Tstart'][0, 0]  # Предполагается, что Tstart это скаляр
+        Tinterval = mat_data['Tinterval'][0, 0]  # Предполагается, что Tinterval это скаляр
+
+        # Вычисление количества точек данных
+        num_data_points = len(mat_data['A'])  # Или любой другой массив того же размера
+
+        # Генерация временного ряда
+        Time = np.arange(Tstart, Tstart + Tinterval * num_data_points, Tinterval)
+        # Создание DataFrame
+        df = pd.DataFrame({
+            'Time': Time,
+            'Channel A': mat_data['A'].ravel(),
+            'Channel B': mat_data['B'].ravel(),
+            'Channel C': mat_data['C'].ravel(),
+            'Channel D': mat_data['D'].ravel()
+        })
+        df['Time'] = df['Time'].map('{:.10f}'.format)
+        df[['Time', 'Channel A', 'Channel B', 'Channel C', 'Channel D']] = df[['Time', 'Channel A', 'Channel B',
+                                                                               'Channel C', 'Channel D']].astype(float)
+        print(df)
         WIN_SIZE = 50000
 
 
@@ -95,9 +116,10 @@ if __name__ == "__main__":
                 features_of_df = feature_extractor(df, features_of_df, column)
 
         row_to_add = exp_param(file)
+        print(row_to_add)
         number_of_rows_to_add = features_of_df.shape[0]
 
-        # Повторяем строки row_to_add столько раз, сколько строк в features_of_df
+        # *Повторяем строки row_to_add столько раз, сколько строк в features_of_df*
         rows_to_add = pd.concat([row_to_add] * number_of_rows_to_add, ignore_index=True, axis=0)
 
         # Добавляем rows_to_add слева к features_of_df

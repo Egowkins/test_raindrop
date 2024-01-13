@@ -1,7 +1,6 @@
 import pandas as pd
 from catboost import CatBoostRegressor, Pool
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error
+
 
 
 def model_rain(features_df):
@@ -9,7 +8,7 @@ def model_rain(features_df):
     columns = ['dtAB', 'dtCD', 'dtAC', 'dtBD']
 
     #Цели таргета
-    y_train_multi = features_df[['dtAB', 'dtCD', 'dtAC', 'dtBD']]
+    y_train_multi = features_df[columns]
 
     #Исключение "лишних" обучающих данных
     X_train = features_df[[col for col in features_df.columns if col not in columns]]
