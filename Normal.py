@@ -30,17 +30,35 @@ def heigh_search(dataframe):
     return height
 
 
-def plotter_maker(df, peaks_=None) -> None:
+def plotter_maker(setup, setup2, col_name) -> None:
     """
     :param df: датасет для построения графика
     :param peaks_: пики, если необходимо построить график для датасета в целом
     :return: None
     """
+    fig, axes = plt.subplots(4, 4, figsize=(20, 16))
+
+    # Наложите каждый график на соответствующую область
+    for i, ax in enumerate(axes.flatten()):
+        # Вам нужно указать свои столбцы и параметры для графика в функции plot()
+
+        ax.plot(setup2[i]['Time'], setup2[i][col_name], label='Not_Optimized', color='b')
+        plt.grid(True)
+        ax.plot(setup[i]['Time'], setup[i][col_name], label='Optimized', color='red')
+        plt.grid(True)
+        ax.legend()
+
+
+    # Регулируем расположение графиков
+    plt.tight_layout()
+    plt.savefig(f'Figure{col_name[-1]}.png')
+
+
 
 #todo на проверку смазываемости
 
 
-def dt_finder(dataframe):
+def dt_finder(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     idshniki = dataframe['ID'].unique()
     max_values_df = pd.DataFrame(columns=dataframe.columns.difference(['Time']))
@@ -86,7 +104,7 @@ def dt_finder(dataframe):
     return dataframe1
 
 
-def raindrops_and_peaks(for_train, height_peak, window_size, butter=False, summa=0):
+def raindrops_and_peaks(for_train, height_peak, window_size, butter=False):
 
     peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
 
@@ -96,13 +114,10 @@ def raindrops_and_peaks(for_train, height_peak, window_size, butter=False, summa
     setup = np.empty((len(for_train),), dtype=object)
     print("Создано хранилище капель")
 
-    # Объявляем глобальную переменную для учета индекса
-
-    count = 0
 
     # поиск пиков и вырез окна
     for i, peak in enumerate(peaks):
-        count += 1
+
         start = max(peak - window_size // 2, 0)
         end = min(peak + window_size // 2, len(for_train))
 
@@ -115,18 +130,19 @@ def raindrops_and_peaks(for_train, height_peak, window_size, butter=False, summa
                 for column in window.columns:
 
                     if column != "Time":
-                        # train[column] = train[column].rolling(window=window_size).mean()
-                        height_ = lambda a, b: a if a > b else b
-                        window[column] = apply_lowpass_filter(window[column], height_(abs(window[column].max()), 0.000001), 1, 2)
 
-        window['ID'] = i + summa
+                        height_ = lambda a, b: a if a > b else b
+                        window[column] = apply_lowpass_filter(window[column], height_(abs(window[column].max()), 0.00000000000000001), 1, 2)
+
+        window['ID'] = i
 
         setup[i] = window
 
     return setup
 
 
-
+def find_subpeaks():
+    ...
 
 
 
