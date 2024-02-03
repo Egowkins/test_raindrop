@@ -7,20 +7,19 @@ from file_concat import exp_param
 
 
 def catboost_decorator(func):
-    def wrapper(*args):
+    def wrapper(*args) -> None:
         final = func(*args)
         excel_creator('output.xlsx', final)
         final.drop('M', axis=1, inplace=True)
         print(final)
         results = model_rain(final)
+
         print(results)
     return wrapper
 
 
-
-
 def raindrop_collector(for_train: pd.DataFrame, window_size: int = 50000,
-                       height_peak=None, plot=True):
+                       height_peak=None, plot=True) -> pd.DataFrame:
     """
     #todo настройка лоу пасс фильтра
     :param for_train: датасет для выделения капель
@@ -55,6 +54,11 @@ def raindrop_collector(for_train: pd.DataFrame, window_size: int = 50000,
 
 @catboost_decorator
 def file_d(*args) -> pd.DataFrame:
+    """
+    Функция применяет raindrop_collector и feature_extractor для всех файлов
+    :param args: входные аргументы такие же, каки у raindrop_collector
+    :return: датасет с признаками, выделенными из всех капель из всех файлов
+    """
     final = None
 
     for file in finder():
@@ -70,7 +74,8 @@ def file_d(*args) -> pd.DataFrame:
         for column in df:
 
             if column != 'Time' and column != 'ID':
-                print(f'Извлечение признаков для колонки {column}')
+
+                print(f'Извлечение признаков для колонки {column} из файла {file}')
                 features_of_df = feature_extractor(df, features_of_df, column)
 
         row_to_add = exp_param(file)
@@ -92,12 +97,11 @@ def file_d(*args) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # todo многопоточность
-    # todo рефакторинг (сделать все функциями!!!) DONE
     # todo юниттесты
     # todo документация
-    file_d(50000, 0.15)
-    #file_d()
+
+    file_d()
+
 
 
 
