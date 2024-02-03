@@ -30,7 +30,7 @@ def heigh_search(dataframe):
     return height
 
 
-def plotter_maker(setup, setup2, col_name) -> None:
+def plotter_maker(setup, setup2, col_name: str) -> None:
     """
     :param df: датасет для построения графика
     :param peaks_: пики, если необходимо построить график для датасета в целом
@@ -104,7 +104,7 @@ def dt_finder(dataframe: pd.DataFrame) -> pd.DataFrame:
     return dataframe1
 
 
-def raindrops_and_peaks(for_train, height_peak, window_size, butter=False):
+def raindrops_and_peaks(for_train: pd.DataFrame, height_peak, window_size: int, butter=False):
 
     peaks, i = find_peaks(for_train['Channel A'], height=height_peak, distance=window_size)
 
@@ -132,17 +132,13 @@ def raindrops_and_peaks(for_train, height_peak, window_size, butter=False):
                     if column != "Time":
 
                         height_ = lambda a, b: a if a > b else b
-                        window[column] = apply_lowpass_filter(window[column], height_(abs(window[column].max()), 0.00000000000000001), 1, 2)
+                        window[column] = apply_lowpass_filter(window[column], height_(abs(window[column].max()), 0.0000000000001), 1, 2)
 
         window['ID'] = i
 
         setup[i] = window
 
     return setup
-
-
-def find_subpeaks():
-    ...
 
 
 
