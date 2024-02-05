@@ -92,6 +92,7 @@ def file_d(*args) -> pd.DataFrame:
             final = features_of_df
         else:
             final = pd.concat([features_of_df, final], ignore_index=True)
+        excel_creator('output.xlsx', final)
 
     return final
 
