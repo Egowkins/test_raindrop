@@ -29,9 +29,23 @@ def feature_extractor(df, feature_df, col_name):
             f'Q25_{col_name[-1]}': geometricals.q25(channel_values),
             f'Q75_{col_name[-1]}': geometricals.q75(channel_values),
             f'Q90_{col_name[-1]}': geometricals.q90(channel_values),
-            f'Subpeak_{col_name[-1]}': geometricals.subpeak(channel_values, time_values),
+            f'Subpeak_1_{col_name[-1]}': geometricals.subpeak(channel_values, time_values)[0],
+            f'Subpeak_2_{col_name[-1]}': geometricals.subpeak(channel_values, time_values)[1],
+            f'Subpeak_3_{col_name[-1]}': geometricals.subpeak(channel_values, time_values)[2],
+            f'Subpeak_4_{col_name[-1]}': geometricals.subpeak(channel_values, time_values)[3],
+            f'Subpeak_5_{col_name[-1]}': geometricals.subpeak(channel_values, time_values)[4],
             f'Semiwidth_{col_name[-1]}': geometricals.semi_width(channel_values, time_values)[0]
-            if isinstance(geometricals.semi_width(channel_values, time_values), tuple) else 0
+            if isinstance(geometricals.semi_width(channel_values, time_values), tuple) else 0,
+            f'AbsEnergy_{col_name[-1]}': feature_calculators.abs_energy(channel_values),
+            f'AbsoluteSumOfChanges_{col_name[-1]}': feature_calculators.absolute_sum_of_changes(channel_values),
+            f'BenfordCorrelation_{col_name[-1]}': feature_calculators.benford_correlation(channel_values),
+            f'CidCe_{col_name[-1]}': feature_calculators.cid_ce(channel_values, normalize=True),
+            f'FirstLocMax_{col_name[-1]}': feature_calculators.first_location_of_maximum(channel_values),
+            f'MeanChange_{col_name[-1]}': feature_calculators.mean_change(channel_values),
+            f'MeanSecDerivative_{col_name[-1]}': feature_calculators.mean_second_derivative_central(channel_values),
+            f'VarLargerThanStd_{col_name[-1]}': feature_calculators.variance_larger_than_standard_deviation(
+                channel_values),
+            f'Variation_coef_{col_name[-1]}': feature_calculators.variation_coefficient(channel_values)
         }
 
 
@@ -54,7 +68,16 @@ def feature_extractor(df, feature_df, col_name):
             f'Median_{col_name[-1]}': feature_calculators.median(channel_values),
             f'SampleEntropy_{col_name[-1]}': feature_calculators.sample_entropy(channel_values),
             f'VarLargerThanStd_{col_name[-1]}': feature_calculators.variance_larger_than_standard_deviation(channel_values)
-            
+            f'Subpeak_1_semiwidth_{col_name[-1]}': geometricals.semi_width_subpekas(
+                geometricals.subpeak(channel_values, time_values, True)[0], channel_values, time_values)[0],
+            f'Subpeak_2_semiwidth_{col_name[-1]}': geometricals.semi_width_subpekas(
+                geometricals.subpeak(channel_values, time_values, True)[1], channel_values, time_values)[0],
+            f'Subpeak_3_semiwidth_{col_name[-1]}': geometricals.semi_width_subpekas(
+                geometricals.subpeak(channel_values, time_values, True)[2], channel_values, time_values)[0],
+            f'Subpeak_4_semiwidth_{col_name[-1]}': geometricals.semi_width_subpekas(
+                geometricals.subpeak(channel_values, time_values, True)[3], channel_values, time_values)[0],
+            f'Subpeak_5_semiwidth_{col_name[-1]}': geometricals.semi_width_subpekas(
+                geometricals.subpeak(channel_values, time_values, True)[4], channel_values, time_values)[0],
             
             
             f'Subpeak_{col_name[-1]}': geometricals.subpeak(channel_values),
